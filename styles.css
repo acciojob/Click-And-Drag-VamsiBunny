@@ -24,7 +24,7 @@ body {
   width: 100%;
   border: 1px solid white;
   overflow-x: scroll;
-  overflow-y: hidden;
+  overflow-y: scroll;
   white-space: nowrap;
   user-select: none;
   cursor: pointer;
