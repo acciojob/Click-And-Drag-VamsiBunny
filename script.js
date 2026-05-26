@@ -8,7 +8,7 @@ container.addEventListener('mousedown', (e) => {
   isDown = true;
   container.classList.add('active');
 
-  startX = e.pageX;
+  startX = e.pageX - container.offsetLeft;
   scrollLeft = container.scrollLeft;
 });
 
@@ -27,6 +27,8 @@ container.addEventListener('mousemove', (e) => {
 
   e.preventDefault();
 
-  const walk = (e.pageX - startX) * 2;
+  const x = e.pageX - container.offsetLeft;
+  const walk = (x - startX) * 2;
+
   container.scrollLeft = scrollLeft - walk;
 });
