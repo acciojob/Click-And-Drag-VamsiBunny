@@ -1,57 +1,34 @@
-const items = document.querySelectorAll('.item');
+const slider = document.querySelector('.items');
 
-let isDragging = false;
-let currentItem = null;
+let isDown = false;
+let startX;
+let scrollLeft;
 
-items.forEach((item) => {
+slider.addEventListener('mousedown', (e) => {
+  isDown = true;
+  slider.classList.add('active');
 
-  item.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    currentItem = item;
+  startX = e.pageX - slider.offsetLeft;
+  scrollLeft = slider.scrollLeft;
+});
 
-    currentItem.style.position = 'absolute';
-    currentItem.style.zIndex = '1000';
+slider.addEventListener('mouseleave', () => {
+  isDown = false;
+  slider.classList.remove('active');
+});
 
-    moveAt(e);
+slider.addEventListener('mouseup', () => {
+  isDown = false;
+  slider.classList.remove('active');
+});
 
-    function moveAt(event) {
-      const container = document.querySelector('.items');
+slider.addEventListener('mousemove', (e) => {
+  if (!isDown) return;
 
-      const rect = container.getBoundingClientRect();
-      const itemWidth = currentItem.offsetWidth;
-      const itemHeight = currentItem.offsetHeight;
+  e.preventDefault();
 
-      let left = event.clientX - rect.left - itemWidth / 2;
-      let top = event.clientY - rect.top - itemHeight / 2;
+  const x = e.pageX - slider.offsetLeft;
+  const walk = (x - startX) * 2;
 
-      // Boundary constraints
-      left = Math.max(0, Math.min(left, rect.width - itemWidth));
-      top = Math.max(0, Math.min(top, rect.height - itemHeight));
-
-      currentItem.style.left = `${left}px`;
-      currentItem.style.top = `${top}px`;
-    }
-
-    function onMouseMove(event) {
-      if (!isDragging) return;
-      moveAt(event);
-    }
-
-    document.addEventListener('mousemove', onMouseMove);
-
-    document.addEventListener(
-      'mouseup',
-      () => {
-        isDragging = false;
-        currentItem = null;
-        document.removeEventListener('mousemove', onMouseMove);
-      },
-      { once: true }
-    );
-  });
-
-  item.addEventListener('dragstart', (e) => {
-    e.preventDefault();
-  });
-
+  slider.scrollLeft = scrollLeft - walk;
 });
