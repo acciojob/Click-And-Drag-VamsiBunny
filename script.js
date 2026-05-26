@@ -1,5 +1,5 @@
 const container = document.querySelector('.items');
-const items = document.querySelectorAll('.item');
+const items     = document.querySelectorAll('.item');
 
 /* ── Cube drag state ── */
 let draggedItem = null;
@@ -8,29 +8,28 @@ let offsetY = 0;
 
 /* ── Container scroll-drag state ── */
 let isScrolling = false;
-let startX = 0;
-let scrollLeft = 0;
+let startX      = 0;
+let scrollLeft  = 0;
 
-/* ─────────────────────────────────────────
-   CUBE DRAG  —  mousedown on individual items
-───────────────────────────────────────── */
+/* ─────────────────────────────────
+   CUBE DRAG — mousedown on each item
+───────────────────────────────── */
 items.forEach(item => {
   item.addEventListener('mousedown', (e) => {
-    e.stopPropagation(); // prevent container scroll-drag from firing
+    e.stopPropagation();
 
     draggedItem = item;
+    const cRect = container.getBoundingClientRect();
+    const iRect = item.getBoundingClientRect();
 
-    const containerRect = container.getBoundingClientRect();
-    const itemRect = item.getBoundingClientRect();
+    offsetX = e.clientX - iRect.left;
+    offsetY = e.clientY - iRect.top;
 
-    offsetX = e.clientX - itemRect.left;
-    offsetY = e.clientY - itemRect.top;
-
-    item.style.width    = itemRect.width  + 'px';
-    item.style.height   = itemRect.height + 'px';
+    item.style.width    = iRect.width  + 'px';
+    item.style.height   = iRect.height + 'px';
     item.style.position = 'absolute';
-    item.style.left     = (itemRect.left - containerRect.left + container.scrollLeft) + 'px';
-    item.style.top      = (itemRect.top  - containerRect.top  + container.scrollTop)  + 'px';
+    item.style.left     = (iRect.left - cRect.left + container.scrollLeft) + 'px';
+    item.style.top      = (iRect.top  - cRect.top  + container.scrollTop)  + 'px';
     item.style.zIndex   = 1000;
 
     container.classList.add('active');
@@ -38,35 +37,33 @@ items.forEach(item => {
   });
 });
 
-/* ─────────────────────────────────────────
-   CONTAINER SCROLL-DRAG  —  mousedown on container background
-───────────────────────────────────────── */
+/* ─────────────────────────────────
+   CONTAINER SCROLL — mousedown on container
+───────────────────────────────── */
 container.addEventListener('mousedown', (e) => {
-  // Only activate if NOT clicking a cube (cubes call stopPropagation)
   isScrolling = true;
-  startX     = e.pageX - container.offsetLeft;
-  scrollLeft = container.scrollLeft;
+  startX      = e.pageX;          // ✅ raw pageX — no offsetLeft subtraction
+  scrollLeft  = container.scrollLeft;
   container.classList.add('active');
   e.preventDefault();
 });
 
-/* ─────────────────────────────────────────
-   SHARED MOUSEMOVE  —  document level
-───────────────────────────────────────── */
-document.addEventListener('mousemove', (e) => {
+/* ─────────────────────────────────
+   MOUSEMOVE — on container, not document
+   Cypress triggers fire on .items directly;
+   attaching here avoids bubbling issues
+───────────────────────────────── */
+container.addEventListener('mousemove', (e) => {
 
   /* Cube drag */
   if (draggedItem) {
-    const containerRect = container.getBoundingClientRect();
+    const cRect = container.getBoundingClientRect();
 
-    let newLeft = e.clientX - containerRect.left - offsetX + container.scrollLeft;
-    let newTop  = e.clientY - containerRect.top  - offsetY + container.scrollTop;
+    let newLeft = e.clientX - cRect.left - offsetX + container.scrollLeft;
+    let newTop  = e.clientY - cRect.top  - offsetY + container.scrollTop;
 
-    const maxLeft = container.scrollWidth  - draggedItem.offsetWidth;
-    const maxTop  = container.scrollHeight - draggedItem.offsetHeight;
-
-    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-    newTop  = Math.max(0, Math.min(newTop,  maxTop));
+    newLeft = Math.max(0, Math.min(newLeft, container.scrollWidth  - draggedItem.offsetWidth));
+    newTop  = Math.max(0, Math.min(newTop,  container.scrollHeight - draggedItem.offsetHeight));
 
     draggedItem.style.left = newLeft + 'px';
     draggedItem.style.top  = newTop  + 'px';
@@ -76,20 +73,19 @@ document.addEventListener('mousemove', (e) => {
   /* Container scroll-drag */
   if (!isScrolling) return;
   e.preventDefault();
-  const x    = e.pageX - container.offsetLeft;
-  const walk = (x - startX) * 2;
+  const walk = (e.pageX - startX) * 2; // ✅ simple delta, no offsetLeft
   container.scrollLeft = scrollLeft - walk;
 });
 
-/* ─────────────────────────────────────────
-   SHARED MOUSEUP  —  document level
-───────────────────────────────────────── */
+/* ─────────────────────────────────
+   MOUSEUP — document level to catch
+   releases anywhere on the page
+───────────────────────────────── */
 document.addEventListener('mouseup', () => {
   if (draggedItem) {
     draggedItem.style.zIndex = '';
     draggedItem = null;
   }
-
   isScrolling = false;
   container.classList.remove('active');
 });
